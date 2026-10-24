@@ -11,8 +11,8 @@ venv/
 .venv/
 env/
 
-# Production build outputs
-frontend/dist/
+# Production build outputs (tracked for zero-config cloud deployment)
+# frontend/dist/
 
 # Environment variables & secrets
 .env

@@ -43,13 +43,15 @@ sample_dir = os.path.join(os.path.dirname(__file__), "sample_data")
 if os.path.exists(sample_dir):
     app.mount("/sample_data", StaticFiles(directory=sample_dir), name="sample_data")
 
-# Mount built frontend dist for unified production container serving
+# Serve built frontend SPA if available
 frontend_dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
 if not os.path.exists(frontend_dist_dir):
     frontend_dist_dir = os.path.join(os.path.dirname(__file__), "frontend", "dist")
-if os.path.exists(frontend_dist_dir):
-    app.mount("/static", StaticFiles(directory=frontend_dist_dir), name="static")
 
+if os.path.exists(frontend_dist_dir):
+    assets_dir = os.path.join(frontend_dist_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 @app.get("/api/health")
 async def health_check():
@@ -78,6 +80,22 @@ async def platform_info():
         ],
         "data_contract_specification": "Strict JSON / Pydantic v2 Validated"
     }
+
+from fastapi.responses import FileResponse
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    if os.path.exists(frontend_dist_dir):
+        candidate = os.path.join(frontend_dist_dir, full_path)
+        if full_path and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        index_file = os.path.join(frontend_dist_dir, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+    return JSONResponse(
+        status_code=404,
+        content={"error": "Frontend build not found. Run 'npm run build' inside frontend/."}
+    )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
