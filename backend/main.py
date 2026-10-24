@@ -43,6 +43,14 @@ sample_dir = os.path.join(os.path.dirname(__file__), "sample_data")
 if os.path.exists(sample_dir):
     app.mount("/sample_data", StaticFiles(directory=sample_dir), name="sample_data")
 
+# Mount built frontend dist for unified production container serving
+frontend_dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if not os.path.exists(frontend_dist_dir):
+    frontend_dist_dir = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+if os.path.exists(frontend_dist_dir):
+    app.mount("/static", StaticFiles(directory=frontend_dist_dir), name="static")
+
+
 @app.get("/api/health")
 async def health_check():
     return {
